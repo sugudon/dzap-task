@@ -12,6 +12,7 @@ const Disperse: React.FC<InputProps> = ({ labelText }) => {
   const [displayErros, setErros] = useState<string[]>([]);
   const [showOption, setShowOption] = useState<boolean>(false);
   const [showSample, setShowSample] = useState<boolean>(false);
+  const [showbtn, setShowBtn] = useState<boolean>(true);
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const textLineNoref = useRef<HTMLDivElement>(null);
@@ -21,12 +22,14 @@ const Disperse: React.FC<InputProps> = ({ labelText }) => {
   const handleChange = (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = evt.target?.value;
     setValue(val);
+    setShowBtn(true);
   };
 
   const addMoreNumbers = (noNo: number) => {
     if (textLineNoref?.current) {
-      const lines = value?.split('\n');
+      const lines = value.split('\n');
       const runTolen = lines ? lines.length : noNo;
+      console.log('runTolen ** ', runTolen);
       let html = '';
       for (let i = 1; i <= runTolen; i++) {
         html += `<div class='number'>${i}</div>`;
@@ -51,9 +54,11 @@ const Disperse: React.FC<InputProps> = ({ labelText }) => {
 
   const onSubmitHandle = (evt: React.FormEvent<HTMLFormElement>) => {
     evt.preventDefault();
-
-    const lines = value?.split('\n');
+    setShowBtn(false);
+    const lines = value.split('\n');
     const erros: string[] = [];
+
+    setShowOption(false);
 
     lines.forEach((dt, i) => {
       if (dt) {
@@ -86,7 +91,23 @@ const Disperse: React.FC<InputProps> = ({ labelText }) => {
         // Duplicate Val check
         let lineNosArr: number[] = [];
         lines.reduce(function (a, e, i) {
-          if (e === dt) {
+          let eSplitSpace = splitLength(e, ' ');
+          let eSplitEqual = splitLength(e, '=');
+          let eSplitComma = splitLength(e, ',');
+          if (
+            (splittedDtSpace.length > 0 &&
+              eSplitSpace.length > 0 &&
+              eSplitSpace[0] &&
+              eSplitSpace[0] === splittedDtSpace[0]) ||
+            (splittedDtEqual.length > 0 &&
+              eSplitEqual.length > 0 &&
+              eSplitEqual[0] &&
+              eSplitEqual[0] === splittedDtEqual[0]) ||
+            (splittedDtComma.length > 0 &&
+              eSplitComma.length > 0 &&
+              eSplitComma[0] &&
+              eSplitComma[0] === splittedDtComma[0])
+          ) {
             lineNosArr.push(i + 1);
           }
           return a;
@@ -110,17 +131,19 @@ const Disperse: React.FC<InputProps> = ({ labelText }) => {
           if (!erros.includes(duErr)) {
             erros.push(duErr);
           }
-        } else {
-          setShowOption(false);
         }
       }
     });
+
+    if (!erros.length) {
+      setShowBtn(true);
+    }
 
     setErros(erros);
   };
 
   const keepFirstOne = () => {
-    const lines = value?.split('\n');
+    const lines = value.split('\n');
 
     let keepFirstOne = lines.filter((c, index) => {
       return lines.indexOf(c) === index;
@@ -130,49 +153,57 @@ const Disperse: React.FC<InputProps> = ({ labelText }) => {
   };
 
   const combineBalance = () => {
-    const lines = value?.split('\n');
+    const lines = value.split('\n');
     let newList: string[] = [];
     lines.forEach((dt, i) => {
       if (dt) {
+        let splittedDtSpace = splitLength(dt, ' ');
+        let splittedDtEqual = splitLength(dt, '=');
+        let splittedDtComma = splitLength(dt, ',');
+
         let lineNosArr: number = 0;
         let cobineBy: string = '';
         let prefixAddr: string = '';
+
         lines.reduce(function (a, e, i) {
-          if (e === dt) {
-            let splittedDtSpace = splitLength(dt, ' ');
-            let splittedDtEqual = splitLength(dt, '=');
-            let splittedDtComma = splitLength(dt, ',');
-            if (
-              splittedDtSpace.length > 1 &&
-              splittedDtSpace[0] &&
-              !isNaN(Number(splittedDtSpace[1]))
-            ) {
+          let eSplitSpace = splitLength(e, ' ');
+          let eSplitEqual = splitLength(e, '=');
+          let eSplitComma = splitLength(e, ',');
+          if (
+            (splittedDtSpace.length > 0 &&
+              eSplitSpace.length > 0 &&
+              eSplitSpace[0] &&
+              eSplitSpace[0] === splittedDtSpace[0]) ||
+            (splittedDtEqual.length > 0 &&
+              eSplitEqual.length > 0 &&
+              eSplitEqual[0] &&
+              eSplitEqual[0] === splittedDtEqual[0]) ||
+            (splittedDtComma.length > 0 &&
+              eSplitComma.length > 0 &&
+              eSplitComma[0] &&
+              eSplitComma[0] === splittedDtComma[0])
+          ) {
+            if (!isNaN(Number(eSplitSpace[1]))) {
               cobineBy = ' ';
-              lineNosArr += Number(splittedDtSpace[1]);
-              prefixAddr = splittedDtSpace[0];
+              lineNosArr += Number(eSplitSpace[1]);
+              prefixAddr = eSplitSpace[0];
             }
-            if (
-              splittedDtEqual.length > 1 &&
-              splittedDtEqual[0] &&
-              !isNaN(Number(splittedDtEqual[1]))
-            ) {
+            if (!isNaN(Number(eSplitEqual[1]))) {
               cobineBy = '=';
-              lineNosArr += Number(splittedDtEqual[1]);
-              prefixAddr = splittedDtEqual[0];
+              lineNosArr += Number(eSplitEqual[1]);
+              prefixAddr = eSplitEqual[0];
             }
-            if (
-              splittedDtComma.length > 1 &&
-              splittedDtComma[0] &&
-              !isNaN(Number(splittedDtComma[1]))
-            ) {
+            if (!isNaN(Number(eSplitComma[1]))) {
               cobineBy = ',';
-              lineNosArr += Number(splittedDtComma[1]);
-              prefixAddr = splittedDtComma[0];
+              lineNosArr += Number(eSplitComma[1]);
+              prefixAddr = eSplitComma[0];
             }
           }
           return a;
         }, []);
-        newList.push(`${prefixAddr}${cobineBy}${lineNosArr}`);
+        if (!newList.find(ck => ck.includes(prefixAddr))) {
+          newList.push(`${prefixAddr}${cobineBy}${lineNosArr}`);
+        }
       }
     });
 
@@ -182,6 +213,10 @@ const Disperse: React.FC<InputProps> = ({ labelText }) => {
 
     setValue(keepFirstOne?.join('\n'));
   };
+
+  const btnStyle = showbtn
+    ? 'mt-10 px-6 py-2 text-purple-100 w-full rounded-full bg-gradient-to-r from-purple-400 to-blue-500'
+    : 'mt-10 px-6 py-2 text-purple-100 w-full rounded-full bg-black disabled:opacity-100 pointer-events-none';
 
   return (
     <>
@@ -279,10 +314,7 @@ const Disperse: React.FC<InputProps> = ({ labelText }) => {
           )}
         </div>
 
-        <button
-          type='submit'
-          className='mt-10 px-6 py-2 text-purple-100 w-full rounded-full bg-gradient-to-r from-purple-400 to-blue-500'
-        >
+        <button type='submit' className={btnStyle}>
           Next
         </button>
       </form>
